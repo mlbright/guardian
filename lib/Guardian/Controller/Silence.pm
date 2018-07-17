@@ -4,38 +4,50 @@ use Mojo::IOLoop;
 
 sub silence {
   my $self    = shift;
-  my $payload = $self->req->json;
 
-  unless ( exists( $payload->{service_name} )
-    && exists( $payload->{notifier} )
-    && exists( $payload->{'next_signal'} ) )
-  {
-    $self->app->log->error('bad JSON');
-    $self->render( text => "bad JSON...\n\n" . $self->req->body );
+  my $err = validate_service_payload($self->req->json);
+
+  unless ($err eq "") {
+    my $msg = 'invalid payload: bad JSON or missing fields';
+    $self->app->log->error($msg);
+    $self->render( text => "$msg\n\n$err\n\n" . $self->req->body );
     return;
   }
 
-  my $timeout      = $payload->{'next_signal'};
-  my $service_name = $payload->{'service_name'};
+  my $sn = $self->req->json->{'service_name'};
 
-  if ( exists( $self->app->services->{$service_name} ) ) {
-    Mojo::IOLoop->remove( $self->app->services->{$service_name}->{timer_id} );
-    $self->app->log->info("$service_name has averted disaster");
+  if ( exists( $self->app->services->{$sn} )
+    && exists( $self->app->services->{$sn}->{timer_id} ) )
+  {
+    Mojo::IOLoop->remove( $self->app->services->{ $sn }->{timer_id} );
+    $self->app->log->info(sprintf("'%s' has averted disaster: removing timer %s",$self->app->services->{ $sn }->{timer_id} ));
   }
 
-  my $timer_id = Mojo::IOLoop->timer(
-    $timeout => sub {
-      $self->app->log->info( 'notify X about ' . $service_name );
-    }
-  );
+  $self->app->log->info( sprintf("new alert for '%s' scheduled in %d seconds", $sn, $self->req->json->{next_signal}));
 
-  $self->app->services->{$service_name} = {
-    next_signal => $timeout,
-    notifier    => $payload->{notifier},
-    timer_id    => $timer_id,
+  $self->app->services->{$sn} = {
+    next_signal => $self->req->json->{next_signal},
+    notifiers   => $self->req->json->{notifiers},
+    timer_id    => my $timer_id = Mojo::IOLoop->timer(
+      $self->req->json->{next_signal} => sub {
+        $self->app->log->info( sprintf("notify X about '%s'", $sn));
+        delete $self->app->services->{$sn}->{timer_id};
+      }
+    ),
   };
 
   $self->render( text => "OK" );
+}
+
+sub validate_service_payload {
+  my $json = shift;
+  my $error_msg = "";
+  for my $key (qw(notifiers service_name next_signal)) {
+    unless (exists($json->{$key})) {
+      $error_msg .= "Could not retrieve $key\n";
+    }
+  }
+  return $error_msg;
 }
 
 1;

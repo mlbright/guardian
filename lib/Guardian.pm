@@ -11,6 +11,7 @@ sub startup {
   # Documentation browser under "/perldoc"
   $self->plugin('PODRenderer') if $config->{perldoc};
 
+  # Global cache of services
   $self->helper( services => sub { state $services = {} } );
 
   # Router

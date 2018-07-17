@@ -12,3 +12,6 @@ tidy:
 
 clean:
 	find . -type f -name "*.bak" -exec rm {} \;
+
+dev:
+	morbo scripts/guardian

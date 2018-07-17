@@ -1,0 +1,5 @@
+{
+  "service_name": "my nifty service",
+  "next_signal": "7",
+  "notifiers": ["stderr","email"]
+}
