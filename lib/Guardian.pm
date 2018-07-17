@@ -5,11 +5,8 @@ use Mojo::Base 'Mojolicious';
 sub startup {
   my $self = shift;
 
-  # Load configuration from hash returned by "my_app.conf"
+  # Load configuration from hash returned by "guardian.conf"
   my $config = $self->plugin('Config');
-
-  # Documentation browser under "/perldoc"
-  $self->plugin('PODRenderer') if $config->{perldoc};
 
   # Global cache of services
   $self->helper( services => sub { state $services = {} } );
@@ -17,9 +14,9 @@ sub startup {
   # Router
   my $r = $self->routes;
 
-  # Normal route to controller
-  $r->get('/')->to('example#welcome');
-  $r->post('/silence')->to('silence#silence');
+  # Routes to controller
+  $r->get('/guardian')->to('signal#catalog');
+  $r->post('/guardian/api/v1/signal')->to('signal#signal');
 }
 
 1;
