@@ -25,20 +25,15 @@ sub silence {
     $service = $self->app->services->{$service_name};
     my $timer_id = $service->{timer_id};
     Mojo::IOLoop->remove($timer_id);
-    delete $self->app->services->{$service_name};
     $self->app->log->info("$service_name has averted disaster");
   }
+
   my $timer_id = Mojo::IOLoop->timer(
     $timeout => sub {
-      my $loop = shift;
       $self->app->log->info( 'notify X about ' . $service_name );
-
-      $service = $self->app->services->{$service_name};
-      my $timer_id = $service->{timer_id};
-      $loop->remove($timer_id);
-      delete $self->app->services->{$service_name};
     }
   );
+
   $service = {
     next_signal  => $timeout,
     service_name => $service_name,
