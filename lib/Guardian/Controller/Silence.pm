@@ -17,14 +17,9 @@ sub silence {
 
   my $timeout      = $payload->{'next_signal'};
   my $service_name = $payload->{'service_name'};
-  my $notifier     = $payload->{'notifier'};
 
-  my $service;
   if ( exists( $self->app->services->{$service_name} ) ) {
-    $self->app->log->info("$service_name is registered...");
-    $service = $self->app->services->{$service_name};
-    my $timer_id = $service->{timer_id};
-    Mojo::IOLoop->remove($timer_id);
+    Mojo::IOLoop->remove( $self->app->services->{$service_name}->{timer_id} );
     $self->app->log->info("$service_name has averted disaster");
   }
 
@@ -34,13 +29,11 @@ sub silence {
     }
   );
 
-  $service = {
-    next_signal  => $timeout,
-    service_name => $service_name,
-    notifier     => $notifier,
-    timer_id     => $timer_id,
+  $self->app->services->{$service_name} = {
+    next_signal => $timeout,
+    notifier    => $payload->{notifier},
+    timer_id    => $timer_id,
   };
-  $self->app->services->{$service_name} = $service;
 
   $self->render( text => "OK" );
 }
