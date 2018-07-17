@@ -26,8 +26,10 @@ sub signal {
   {
     Mojo::IOLoop->remove( $self->app->services->{$sn}->{timer_id} );
     $self->app->log->info(
-      sprintf( "'%s' has averted disaster: removing timer %s",
-        $self->app->services->{$sn}->{timer_id} )
+      sprintf(
+        "'%s' has averted disaster: removing timer %s",
+        $sn, $self->app->services->{$sn}->{timer_id}
+      )
     );
   }
 
@@ -43,8 +45,11 @@ sub signal {
     notifiers   => $self->req->json->{notifiers},
     timer_id    => my $timer_id = Mojo::IOLoop->timer(
       $self->req->json->{next_signal} => sub {
-        $self->app->log->info( sprintf( "notify X about '%s'", $sn ) );
         delete $self->app->services->{$sn}->{timer_id};
+        for my $notifier ( @{ $self->app->services->{$sn}->{notifiers} } ) {
+          $self->app->log->info(
+            sprintf( "notify %s about '%s'", $notifier, $sn ) );
+        }
       }
     ),
   };
