@@ -68,4 +68,12 @@ sub validate_service_payload {
   return $error_msg;
 }
 
+sub get_slack_url {
+  my $self = shift;
+
+  return $self->ua->get(
+    $self->slack => { "X-Vault-Token" => env_var('VAULT_TOKEN') } )
+    ->result->json->{data}{URL};
+}
+
 1;

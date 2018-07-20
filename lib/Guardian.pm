@@ -10,6 +10,7 @@ sub startup {
 
   # Global cache of services
   $self->helper( services => sub { state $services = {} } );
+  $self->helper( slack => sub { return $config->{slack_vault_url} } );
 
   # Router
   my $r = $self->routes;
